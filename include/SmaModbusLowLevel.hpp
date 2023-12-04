@@ -2,8 +2,8 @@
 #define __SMAMODBUSLOWLEVEL_HPP__
 
 #include <cstdint>
-#include <vector>
 #include <string>
+#include <vector>
 #include <MB/TCP/connection.hpp>
 
 

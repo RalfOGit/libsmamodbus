@@ -18,10 +18,10 @@ SmaModbusValue SmaModbus::readRegister(const RegisterDefinition& reg) {
     }
     else {
         switch (reg.type) {
-        case DataType::S32:  //{ value = SmaModbusValue(readUint(reg.addr, reg.size * 2u, exception, false, true), reg.type, reg.format); break; }
-        case DataType::U32:  //{ value = SmaModbusValue(readUint(reg.addr, reg.size * 2u, exception, false, true), reg.type, reg.format); break; }
-        case DataType::S64:  //{ value = SmaModbusValue(readUint(reg.addr, reg.size * 2u, exception, false, true), reg.type, reg.format); break; }
-        case DataType::U64:  //{ value = SmaModbusValue(readUint(reg.addr, reg.size * 2u, exception, false, true), reg.type, reg.format); break; }
+        case DataType::S32:
+        case DataType::U32:
+        case DataType::S64:
+        case DataType::U64:
         case DataType::ENUM: { value = SmaModbusValue(readUint(reg.addr, reg.size * 2u, exception, false, true), reg.type, reg.format); break; }
         case DataType::STR32:{ value = SmaModbusValue(readString(reg.addr, reg.size * 2u, exception, false, true), reg.type, reg.format); break; }
         default: exception = SmaModbusException(SmaModbusErrorCode::InvalidDataType, 3, MBFunctionCode::ReadAnalogOutputHoldingRegisters); break;
@@ -42,21 +42,21 @@ bool SmaModbus::writeRegister(const RegisterDefinition& reg, const SmaModbusValu
         exception = SmaModbusException(SmaModbusErrorCode::InvalidAccessMode, 3, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters);
     }
     else {
-        // FIXME: NOT YET OK
-        uint64_t reg_value = SmaModbusValue((uint64_t)value, reg.type, reg.format);
-
         switch (reg.type) {
-        case DataType::S32:  result = writeUint(reg.addr, reg.size * 2u, (int32_t)reg_value, exception, false, true); break;
-        case DataType::U32:  result = writeUint(reg.addr, reg.size * 2u, (uint32_t)reg_value, exception, false, true); break;
-        case DataType::S64:  result = writeUint(reg.addr, reg.size * 2u, (int64_t)reg_value, exception, false, true); break;
-        case DataType::U64:  result = writeUint(reg.addr, reg.size * 2u, (uint64_t)reg_value, exception, false, true); break;
-        case DataType::ENUM: result = writeUint(reg.addr, reg.size * 2u, (uint32_t)value, exception, false, true); break;
+        case DataType::S32:
+        case DataType::U32:
+        case DataType::S64:
+        case DataType::U64:
+        case DataType::ENUM: {
+            uint64_t reg_value = SmaModbusValue((uint64_t)value, reg.type, reg.format); // apply the register type and format to the given value
+            result = writeUint(reg.addr, reg.size * 2u, reg_value, exception, false, true);
+            break;
+        }
         case DataType::STR32:result = writeString(reg.addr, reg.size * 2u, (std::string)value, exception, false, true); break;
         default:  exception = SmaModbusException(SmaModbusErrorCode::InvalidFormatType, 3, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters); break;
         }
     }
 
-    printf("writeRegister(%lu, %s) => %s\n", reg.addr, ((std::string)value).c_str(), exception.toString().c_str());
     if (exception.hasError() || result == false) {
         printf("writeRegister(%lu, %s) => %s\n", reg.addr, ((std::string)value).c_str(), exception.toString().c_str());
         return false;

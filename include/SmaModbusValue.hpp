@@ -61,7 +61,7 @@ namespace libsmamodbus {
 
         SmaModbusValue(void) : u64(0), type(DataType::U32), format(DataFormat::RAW) {}
         SmaModbusValue(uint32_t value, DataType typ = DataType::U32, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
-        SmaModbusValue(int32_t  value, DataType typ = DataType::S32, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
+        SmaModbusValue(int32_t  value, DataType typ = DataType::S32, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)(uint32_t)value, typ, fmt) {}
         SmaModbusValue(int64_t  value, DataType typ = DataType::S64, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
         SmaModbusValue(uint64_t value, DataType typ = DataType::U64, DataFormat fmt = DataFormat::RAW) : u64(value), type(typ), format(fmt) {
             uint64_t fix_multiplier = 1;
@@ -71,10 +71,10 @@ namespace libsmamodbus {
             case DataFormat::FIX3: fix_multiplier = 1000; break;
             }
             switch (type) {
-            case DataType::U32:  if (u64 != U32_NaN) u64 *= fix_multiplier; break;
-            case DataType::S32:  if (u64 != S32_NaN) u64 *= fix_multiplier; break;
-            case DataType::U64:  if (u64 != U64_NaN) u64 *= fix_multiplier; break;
-            case DataType::S64:  if (u64 != S64_NaN) u64 *= fix_multiplier; break;
+            case DataType::U32:  if (u64 != U32_NaN) u64 = (uint64_t)((uint32_t)u64 * (uint32_t)fix_multiplier); break;
+            case DataType::S32:  if (u64 != S32_NaN) u64 = (uint64_t)(uint32_t)((int32_t)u64 * (int32_t)fix_multiplier); break;
+            case DataType::U64:  if (u64 != U64_NaN) u64 = u64 * fix_multiplier; break;
+            case DataType::S64:  if (u64 != S64_NaN) u64 = (uint64_t)((int64_t)u64 * (int64_t)fix_multiplier); break;
             }
         }
         SmaModbusValue(const std::string& value, DataType typ = DataType::STR32, DataFormat fmt = DataFormat::RAW) : u64(0), str(value), type(typ), format(fmt) {}
@@ -84,17 +84,17 @@ namespace libsmamodbus {
             format = fmt;
             if (!isNaN(value)) {
                 switch (format) {
-                case DataFormat::FIX1:     value *= 10.0; break;
-                case DataFormat::FIX2:     value *= 100.0; break;
-                case DataFormat::FIX3:     value *= 1000.0; break;
+                case DataFormat::FIX1: value *= 10.0; break;
+                case DataFormat::FIX2: value *= 100.0; break;
+                case DataFormat::FIX3: value *= 1000.0; break;
                 }
             }
             switch (type) {
-            case DataType::U32:  u64 = (uint64_t)(value >= 0 && !isNaN(value) ? (uint32_t)(value + 0.5) : U32_NaN); break;
-            case DataType::S32:  u64 = (uint64_t)(isNaN(value) ? S32_NaN : (int64_t)(int32_t)(value >= 0 ? value + 0.5 : value - 0.5)); break;
+            case DataType::U32:  u64 = (uint64_t)(value >= 0 && !isNaN(value) ? (uint64_t)(uint32_t)(value + 0.5) : U32_NaN); break;
+            case DataType::S32:  u64 = (uint64_t)(isNaN(value) ? S32_NaN : (uint64_t)(uint32_t)(int32_t)(value >= 0 ? value + 0.5 : value - 0.5)); break;
             case DataType::U64:  u64 = (uint64_t)(value >= 0 && !isNaN(value) ? (uint64_t)(value + 0.5) : U64_NaN); break;
-            case DataType::S64:  u64 = (uint64_t)(isNaN(value) ? S64_NaN : (int64_t)(value >= 0 ? value + 0.5 : value - 0.5)); break;
-            case DataType::ENUM: u64 = (uint64_t)(value >= 0 && !isNaN(value) ? (uint32_t)(value + 0.5) : Enum_NaN); break;
+            case DataType::S64:  u64 = (uint64_t)(isNaN(value) ? S64_NaN : (uint64_t)(int64_t)(value >= 0 ? value + 0.5 : value - 0.5)); break;
+            case DataType::ENUM: u64 = (uint64_t)(value >= 0 && !isNaN(value) ? (uint64_t)(uint32_t)(value + 0.5) : Enum_NaN); break;
             }
         }
 
@@ -133,17 +133,17 @@ namespace libsmamodbus {
             double result = nan("2");
             switch (type) {
             case DataType::U32:  result = (u64 == U32_NaN ? Double_NaN : (double)u64); break;
-            case DataType::S32:  result = (u64 == S32_NaN ? Double_NaN : (double)u64); break;
+            case DataType::S32:  result = (u64 == S32_NaN ? Double_NaN : (double)(int64_t)u64); break;
             case DataType::U64:  result = (u64 == S32_NaN ? Double_NaN : (double)u64); break;
-            case DataType::S64:  result = (u64 == S32_NaN ? Double_NaN : (double)u64); break;
+            case DataType::S64:  result = (u64 == S32_NaN ? Double_NaN : (double)(int64_t)u64); break;
             case DataType::ENUM: result = (u64 == Enum_NaN ? Double_NaN : (double)u64); break;
             }
 
             if (!isNaN(result)) {
                 switch (format) {
-                case DataFormat::FIX1:     result /= 10.0; break;
-                case DataFormat::FIX2:     result /= 100.0; break;
-                case DataFormat::FIX3:     result /= 1000.0; break;
+                case DataFormat::FIX1:  result /= 10.0; break;
+                case DataFormat::FIX2:  result /= 100.0; break;
+                case DataFormat::FIX3:  result /= 1000.0; break;
                 }
             }
             return result;

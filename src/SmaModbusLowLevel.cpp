@@ -1,4 +1,3 @@
-#include <vector>
 #include <SmaModbusLowLevel.hpp>
 
 using namespace MB;
