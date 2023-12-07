@@ -33,11 +33,12 @@ namespace libsmamodbus {
          * @param power power value in watts - negative means charging, positive means discharging
          */
         bool setExternalPowerControlMode(double watts) {
-            writeRegister(ExternalPowerControl(), 802);      //  802: active (i.e. self-consumption becomes deactivated)
-            writeRegister(ExternalPowerInWatts(), watts);    // negative means charging, positive means discharging
-            writeRegister(BMSOperationMode(), 2289);         // 2289: charge
+            bool result1 = writeRegister(ExternalPowerControl(), 802);      //  802: active (i.e. self-consumption becomes deactivated)
+            bool result2 = writeRegister(ExternalPowerInWatts(), watts);    // negative means charging, positive means discharging
+            bool result3 = writeRegister(BMSOperationMode(), 2289);         // 2289: charge
             // FIXME: NEED TO SET OTHER REGISTERS DEPENDING ON SIGN OF WATTS
-            writeRegister(BatteryChargeMaxInWatts(), watts); // unsigned value
+            bool result4 = writeRegister(BatteryChargeMaxInWatts(), abs(watts)); // unsigned value
+            return result1 && result2 && result3 && result4;
         }
 
         /**
@@ -53,9 +54,10 @@ namespace libsmamodbus {
         }
 
         bool setPowerRangeInWatts(double minPower, double maxPower) {
-            double nominal_power = readRegister(InverterNominalPower());
-            if (nominal_power < 1000000) {
-                bool result = setPowerRangeInPercent(minPower / nominal_power, maxPower / nominal_power);
+            SmaModbusValue value = readRegister(InverterNominalPower());
+            if (value.isValid()) {
+                double nominal_power = double(value);
+                bool result = setPowerRangeInPercent(100.0 * minPower / nominal_power, 100.0 * maxPower / nominal_power);
                 return result;
             }
             return false;

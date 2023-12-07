@@ -13,6 +13,7 @@ namespace libsmamodbus {
      *  Enumeration of data types used in SMA modbus registers.
      */
     enum class DataType : uint8_t {
+        INVALID = 0,
         U32 = 1,
         S32 = 2,
         U64 = 3,
@@ -59,7 +60,7 @@ namespace libsmamodbus {
 
         static bool isNaN(double value) { return isnan(value); }
 
-        SmaModbusValue(void) : u64(0), type(DataType::U32), format(DataFormat::RAW) {}
+        SmaModbusValue(void) : u64(0), type(DataType::INVALID), format(DataFormat::RAW) {}
         SmaModbusValue(uint32_t value, DataType typ = DataType::U32, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
         SmaModbusValue(int32_t  value, DataType typ = DataType::S32, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)(uint32_t)value, typ, fmt) {}
         SmaModbusValue(int64_t  value, DataType typ = DataType::S64, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
@@ -144,6 +145,20 @@ namespace libsmamodbus {
                 case DataFormat::FIX1:  result /= 10.0; break;
                 case DataFormat::FIX2:  result /= 100.0; break;
                 case DataFormat::FIX3:  result /= 1000.0; break;
+                }
+            }
+            return result;
+        }
+
+        bool isValid(void) const {
+            bool result = false;
+            if (type != DataType::INVALID) {
+                switch (type) {
+                case DataType::U32:  result = (u64 != U32_NaN); break;
+                case DataType::S32:  result = (u64 != S32_NaN); break;
+                case DataType::U64:  result = (u64 != S32_NaN); break;
+                case DataType::S64:  result = (u64 != S32_NaN); break;
+                case DataType::ENUM: result = (u64 != Enum_NaN); break;
                 }
             }
             return result;

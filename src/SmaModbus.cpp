@@ -22,9 +22,19 @@ SmaModbusValue SmaModbus::readRegister(const RegisterDefinition& reg) {
         case DataType::U32:
         case DataType::S64:
         case DataType::U64:
-        case DataType::ENUM: { value = SmaModbusValue(readUint(reg.addr, reg.size * 2u, exception, false, true), reg.type, reg.format); break; }
-        case DataType::STR32:{ value = SmaModbusValue(readString(reg.addr, reg.size * 2u, exception, false, true), reg.type, reg.format); break; }
-        default: exception = SmaModbusException(SmaModbusErrorCode::InvalidDataType, 3, MBFunctionCode::ReadAnalogOutputHoldingRegisters); break;
+        case DataType::ENUM: {
+            uint64_t int_value = readUint(reg.addr, reg.size * 2u, exception, false, true);
+            value = SmaModbusValue(int_value, (exception.hasError() ? DataType::INVALID : reg.type), reg.format);
+            break;
+        }
+        case DataType::STR32:{
+            std::string str_value = readString(reg.addr, reg.size * 2u, exception, false, true);
+            value = SmaModbusValue(str_value, (exception.hasError() ? DataType::INVALID : reg.type), reg.format);
+            break;
+        }
+        default:
+            exception = SmaModbusException(SmaModbusErrorCode::InvalidDataType, 3, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
+            break;
         }
     }
 

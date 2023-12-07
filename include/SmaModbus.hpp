@@ -11,6 +11,7 @@ namespace libsmamodbus {
 
     /**
      *  Class implementing access to sma modbus registers.
+     *  It provides abstractions for register definitions and methods to read and write registers.
      */
     class SmaModbus : public SmaModbusLowLevel {
 
@@ -20,9 +21,9 @@ namespace libsmamodbus {
          *  Enumeration of data access modes used in SMA modbus registers.
          */
         enum class AccessMode : uint8_t {
-            RO = 0x01,
-            WO = 0x02,
-            RW = 0x03
+            RO = 0x01,  //!< Read-only
+            WO = 0x02,  //!< Write-only
+            RW = 0x03   //!< Read-write
         };
 
         /**
@@ -30,31 +31,44 @@ namespace libsmamodbus {
          */
         class RegisterDefinition {
         public:
-            uint16_t addr;
-            uint16_t size;
-            DataType type;
-            DataFormat format;
-            AccessMode mode;
-            std::string identifier;
-            std::string description;
+            uint16_t addr;              //!< Modbus address
+            uint16_t size;              //!< Number of 16-bit words
+            DataType type;              //!< SMA data type (S32, U32, ...)
+            DataFormat format;          //!< SMA data format (FIX0, FIX1, ...)
+            AccessMode mode;            //!< SMA access mode (RO, WO, RW)
+            std::string identifier;     //!< SMA identifier name
+            std::string description;    //!< Description of register
 
+            /** Constructor */
             RegisterDefinition(const std::string& id, uint16_t address, uint16_t numwords, const DataType& dtype,
                 const DataFormat& fmt, const AccessMode& access, const std::string& descr = std::string()) :
                 identifier(id), addr(address), size(numwords), type(dtype),
                 format(fmt), mode(access), description(descr) {}
         };
 
-        /** constructor */
+        /** Constructor; set member variables. */
         SmaModbus(const std::string& peer, const uint16_t port = 502) : SmaModbusLowLevel(peer, port) {}
 
-        /** destructor */
+        /** Destructor; close the tcp connection. */
         ~SmaModbus(void) {}
 
-        // register read methods
+        /**
+         *  Read SMA modbus register.
+         *  @param reg the SMA modbus register definition
+         *  @return a value object holding the value itself and associated metadata
+         */
         SmaModbusValue readRegister(const RegisterDefinition& reg);
 
-        // register write methods
+        /**
+         *  Write SMA modbus register.
+         *  @param reg the SMA modbus register definition
+         *  @param value the value object holding the value itself and associated metadata
+         *  @return true if successful, false otherwise
+         */
         bool writeRegister(const RegisterDefinition& reg, const SmaModbusValue& value);
+        bool writeRegister(const RegisterDefinition& reg, double value) {
+            return writeRegister(reg, SmaModbusValue(value, reg.type, reg.format));
+        }
 
         /**
          * Register 40149

@@ -134,7 +134,7 @@ bool SmaModbusLowLevel::writeString(uint16_t addr, size_t nbytes, const std::str
 bool SmaModbusLowLevel::writeWords(uint16_t addr, const std::vector<uint16_t> &value, SmaModbusException& exception, bool allow_exception, bool print_exception) {
     try {
         ensureConnection();
-        std::vector<ModbusCell> modbus_cells(value.size());
+        std::vector<ModbusCell> modbus_cells;
         for (const auto& word : value) {
             modbus_cells.push_back(ModbusCell(word));
         }
