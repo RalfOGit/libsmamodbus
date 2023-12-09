@@ -22,8 +22,18 @@ namespace libsmamodbus {
          */
         enum class AccessMode : uint8_t {
             RO = 0x01,  //!< Read-only
-            WO = 0x02,  //!< Write-only
+            WO = 0x02,  //!< Write-only - technically readable, but returns NaN
             RW = 0x03   //!< Read-write
+        };
+
+        /**
+         *  Enumeration for additional SMA modbus register related information
+         */
+        enum class Category : uint8_t {
+            Normal                 = 0x00,  //<! no further information
+            GridGuardCodeProtected = 0x01,  //<! access requires grid guard login
+            DeviceControlObject    = 0x02,  //<! device control object for external power control
+            CyclicWritingWarning   = 0x04   //<! cyclic writes will destroy the underlying memory cells
         };
 
         /**
@@ -36,14 +46,15 @@ namespace libsmamodbus {
             DataType type;              //!< SMA data type (S32, U32, ...)
             DataFormat format;          //!< SMA data format (FIX0, FIX1, ...)
             AccessMode mode;            //!< SMA access mode (RO, WO, RW)
+            Category category;          //!< SMA register category (GridGuardCodeProtected, DeviceControlObject, CyclicWritingWarning)
             std::string identifier;     //!< SMA identifier name
             std::string description;    //!< Description of register
 
             /** Constructor */
-            RegisterDefinition(const std::string& id, uint16_t address, uint16_t numwords, const DataType& dtype,
-                const DataFormat& fmt, const AccessMode& access, const std::string& descr = std::string()) :
-                identifier(id), addr(address), size(numwords), type(dtype),
-                format(fmt), mode(access), description(descr) {}
+            RegisterDefinition(uint16_t address, uint16_t numwords, const DataType& dtype,
+                const DataFormat& fmt, const AccessMode& access, const Category& cat,
+                const std::string& id, const std::string& descr = std::string()) :
+                addr(address), size(numwords), type(dtype), format(fmt), mode(access), category(cat), identifier(id), description(descr) {}
         };
 
         /** Constructor; set member variables. */
@@ -70,52 +81,18 @@ namespace libsmamodbus {
             return writeRegister(reg, SmaModbusValue(value, reg.type, reg.format));
         }
 
-        /**
-         * Register 40149
-         * - power value taken into account when external power control is activated
-         * - a positive value means discharge; a negative value means charge
-         */
-        static RegisterDefinition ExternalPowerInWatts(void) { static auto reg = RegisterDefinition("Inv.Ext.W", 40149, 2, DataType::S32, DataFormat::FIX0, AccessMode::RW, ""); return reg; }
-
-        /**
-         * Register 40151
-         * - activate or deactivate external power control
-         * - if activated (802), external power values can be applied
-         * - if deactivated (803), self-consumption mode is activated; this is the normal operating mode
-         */
-        static RegisterDefinition ExternalPowerControl(void) { static auto reg = RegisterDefinition("Inv.Ext.Ctrl", 40151, 2, DataType::ENUM, DataFormat::RAW, AccessMode::RW, ""); return reg; }
-
-        /**
-         * Register 44039
-         * - controls the power range for charge/discharge, independent on the mode (self-consumption or externally controlled)
-         * - register 44039 controls the maximum value of the power range; a positive value means discharge; a negative value means charge
-         */
-        static RegisterDefinition PowerRangeMaxInPercent(void) { static auto reg = RegisterDefinition("Inv.MaxW.Prc", 44039, 2, DataType::S32, DataFormat::FIX2, AccessMode::WO, ""); return reg; }
-
-        /**
-         * Register 44041
-         * - controls the power range for charge/discharge, independent on the mode (self-consumption or externally controlled)
-         * - register 44041 controls the minmum value of the power range; a positive value means discharge; a negative value means charge
-         */
-        static RegisterDefinition PowerRangeMinInPercent(void) { static auto reg = RegisterDefinition("Inv.MinW.Prc", 44041, 2, DataType::S32, DataFormat::FIX2, AccessMode::WO, ""); return reg; }
-
-        /**
-         * Register 40236
-         * - set the BMS operation mode (303: Off, 308: On, 1438: Auto, 2289: Charge, 2290: Discharge, 2424: Default)
-         */
-        static RegisterDefinition BMSOperationMode(void) { static auto reg = RegisterDefinition("CmpBMS.OpMod", 40236, 2, DataType::ENUM, DataFormat::RAW, AccessMode::RW, ""); return reg; }
-
-        /**
-         * Register 40795
-         * - set the maximum battery charge power in watts
-         */
-        static RegisterDefinition BatteryChargeMaxInWatts(void) { static auto reg = RegisterDefinition("batChaMaxW", 40795, 2, DataType::U32, DataFormat::FIX0, AccessMode::RW, ""); return reg; }
-
-        /**
-         * Register 30233
-         * - get the nominal power rating of the inverter in watts
-         */
-        static RegisterDefinition InverterNominalPower(void) { static auto reg = RegisterDefinition("invWLim", 30233, 2, DataType::U32, DataFormat::FIX0, AccessMode::RO, ""); return reg; }
+        // Register definitions
+        static RegisterDefinition Register30233(void) { static auto reg = RegisterDefinition(30233, 2, DataType::U32, DataFormat::FIX0, AccessMode::RO, Category::Normal, "Inverter.WMax", "Nominal active power limit"); return reg; }
+        static RegisterDefinition Register40149(void) { static auto reg = RegisterDefinition(40149, 2, DataType::S32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "Inverter.WModCfg.WCtlComCfg.WSpt", "Active power setpoint"); return reg; }
+        static RegisterDefinition Register40151(void) { static auto reg = RegisterDefinition(40151, 2, DataType::ENUM, DataFormat::RAW, AccessMode::WO, Category::DeviceControlObject, "Inverter.WModCfg.WCtlComCfg.WCtlComAct", "Eff./reac. power control via communication"); return reg; }
+        static RegisterDefinition Register40236(void) { static auto reg = RegisterDefinition(40236, 2, DataType::ENUM, DataFormat::RAW, AccessMode::WO, Category::DeviceControlObject, "CmpBMS.OpMod", "BMS operating mode"); return reg; }
+        static RegisterDefinition Register40793(void) { static auto reg = RegisterDefinition(40793, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "CmpBMS.BatChaMinW", "Min. battery charge capac."); return reg; }
+        static RegisterDefinition Register40795(void) { static auto reg = RegisterDefinition(40795, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "CmpBMS.BatChaMaxW", "Max. battery charge capac."); return reg; }
+        static RegisterDefinition Register40797(void) { static auto reg = RegisterDefinition(40797, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "CmpBMS.BatDschMinW", "Min. battery discharge capac."); return reg; }
+        static RegisterDefinition Register40799(void) { static auto reg = RegisterDefinition(40799, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "CmpBMS.BatDschMaxW", "Max. battery discharge capac."); return reg; }
+        static RegisterDefinition Register40801(void) { static auto reg = RegisterDefinition(40801, 2, DataType::S32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "CmpBMS.GridWSpt", "Mains exch. capac. target setpoint"); return reg; }
+        static RegisterDefinition Register44039(void) { static auto reg = RegisterDefinition(44039, 2, DataType::S32, DataFormat::FIX2, AccessMode::WO, Category::DeviceControlObject, "Inverter.WModCfg.WCtlComCfg.WSptMaxNom", "Maximum active power setpoint"); return reg; }
+        static RegisterDefinition Register44041(void) { static auto reg = RegisterDefinition(44041, 2, DataType::S32, DataFormat::FIX2, AccessMode::WO, Category::DeviceControlObject, "Inverter.WModCfg.WCtlComCfg.WSptMinNom", "Minimum active power setpoint"); return reg; }
     };
 
 }   // namespace libsmamodbus

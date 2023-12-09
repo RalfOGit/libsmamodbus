@@ -22,8 +22,8 @@ namespace libsmamodbus {
          * the mode switch  can be verified by event messages in the UI
          */
         bool setSelfConsumptionMode(void) {
-            bool result1 = writeRegister(ExternalPowerControl(), 803);   //  803: inactive
-            bool result2 = writeRegister(BMSOperationMode(), 1438);      // 1438: automatic
+            bool result1 = writeRegister(Register40151(), 803);     // set external power control to inactive (803)
+            bool result2 = writeRegister(Register40236(), 1438);    // set bms operation mode to automatic (1438)
             return result1 && result2;
         }
 
@@ -33,12 +33,24 @@ namespace libsmamodbus {
          * @param power power value in watts - negative means charging, positive means discharging
          */
         bool setExternalPowerControlMode(double watts) {
-            bool result1 = writeRegister(ExternalPowerControl(), 802);      //  802: active (i.e. self-consumption becomes deactivated)
-            bool result2 = writeRegister(ExternalPowerInWatts(), watts);    // negative means charging, positive means discharging
-            bool result3 = writeRegister(BMSOperationMode(), 2289);         // 2289: charge
-            // FIXME: NEED TO SET OTHER REGISTERS DEPENDING ON SIGN OF WATTS
-            bool result4 = writeRegister(BatteryChargeMaxInWatts(), abs(watts)); // unsigned value
-            return result1 && result2 && result3 && result4;
+            bool result = true;
+            result &= writeRegister(Register40151(), 802);          // set external power control to active (802), i.e. self-consumption becomes deactivated
+            result &= writeRegister(Register40149(), watts);        // set external power in watts, negative means charging, positive means discharging
+            if (watts < 0) {    // force charge
+                result &= writeRegister(Register40236(), 2289);     // set bms operation mode to charge (2289)
+                result &= writeRegister(Register40793(), -watts);   // set minimum battery charging power in watts
+                result &= writeRegister(Register40795(), -watts);   // set maximum battery charging power in watts
+                result &= writeRegister(Register40797(), 0.0);      // set minimum battery discharging power in watts
+                result &= writeRegister(Register40799(), 0.0);      // set maximum battery discharging power in watts
+            }
+            else {              // force discharge
+                result &= writeRegister(Register40236(), 2290);     // set bms operation mode to discharge (2290)
+                result &= writeRegister(Register40793(), 0.0);      // set minimum battery charging power in watts
+                result &= writeRegister(Register40795(), 0.0);      // set maximum battery charging power in watts
+                result &= writeRegister(Register40797(), watts);    // set minimum battery discharging power in watts
+                result &= writeRegister(Register40799(), watts);    // set maximum battery discharging power in watts
+            }
+            return result;
         }
 
         /**
@@ -48,13 +60,13 @@ namespace libsmamodbus {
          * - if both registers are written with the same value, this sets an exact power value
          */
         bool setPowerRangeInPercent(double minPercent, double maxPercent) {
-            bool result1 = writeRegister(PowerRangeMinInPercent(), minPercent);
-            bool result2 = writeRegister(PowerRangeMaxInPercent(), maxPercent);
+            bool result1 = writeRegister(Register44039(), maxPercent);  // set maximum power range in percent
+            bool result2 = writeRegister(Register44041(), minPercent);  // set minimum power range in percent
             return result1 && result2;
         }
 
         bool setPowerRangeInWatts(double minPower, double maxPower) {
-            SmaModbusValue value = readRegister(InverterNominalPower());
+            SmaModbusValue value = readRegister(Register30233());   // get inverter nominal power in watts
             if (value.isValid()) {
                 double nominal_power = double(value);
                 bool result = setPowerRangeInPercent(100.0 * minPower / nominal_power, 100.0 * maxPower / nominal_power);

@@ -13,10 +13,10 @@ SmaModbusValue SmaModbus::readRegister(const RegisterDefinition& reg) {
     SmaModbusException exception;
     SmaModbusValue value;
 
-    if (reg.mode == AccessMode::WO) {
-        exception = SmaModbusException(SmaModbusErrorCode::InvalidAccessMode, 3, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
-    }
-    else {
+    //if (reg.mode == AccessMode::WO) {
+    //    exception = SmaModbusException(SmaModbusErrorCode::InvalidAccessMode, 3, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
+    //}
+    //else {
         switch (reg.type) {
         case DataType::S32:
         case DataType::U32:
@@ -36,7 +36,7 @@ SmaModbusValue SmaModbus::readRegister(const RegisterDefinition& reg) {
             exception = SmaModbusException(SmaModbusErrorCode::InvalidDataType, 3, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
             break;
         }
-    }
+    //}
 
     if (exception.hasError()) {
         printf("readRegister(%lu) => %s\n", reg.addr, exception.toString().c_str());

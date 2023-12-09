@@ -30,12 +30,13 @@ namespace libsmamodbus {
         FIX1 = 2,
         FIX2 = 3,
         FIX3 = 4,
-        DURATION = 5,
-        DATETIME = 6,
-        TEMP = 7,
-        RAW = 8,
-        UTF8 = 9,
-        FIRMWARE = 10
+        FIX4 = 5,
+        DURATION = 6,
+        DATETIME = 7,
+        TEMP = 8,
+        RAW = 9,
+        UTF8 = 10,
+        FIRMWARE = 11
     };
 
     /**
@@ -70,6 +71,7 @@ namespace libsmamodbus {
             case DataFormat::FIX1: fix_multiplier = 10; break;
             case DataFormat::FIX2: fix_multiplier = 100; break;
             case DataFormat::FIX3: fix_multiplier = 1000; break;
+            case DataFormat::FIX4: fix_multiplier = 10000; break;
             }
             switch (type) {
             case DataType::U32:  if (u64 != U32_NaN) u64 = (uint64_t)((uint32_t)u64 * (uint32_t)fix_multiplier); break;
@@ -88,6 +90,7 @@ namespace libsmamodbus {
                 case DataFormat::FIX1: value *= 10.0; break;
                 case DataFormat::FIX2: value *= 100.0; break;
                 case DataFormat::FIX3: value *= 1000.0; break;
+                case DataFormat::FIX4: value *= 10000.0; break;
                 }
             }
             switch (type) {
@@ -123,6 +126,7 @@ namespace libsmamodbus {
                     case DataFormat::FIX1: snprintf(buffer, sizeof(buffer), "%.1lf", dvalue); break;
                     case DataFormat::FIX2: snprintf(buffer, sizeof(buffer), "%.2lf", dvalue); break;
                     case DataFormat::FIX3: snprintf(buffer, sizeof(buffer), "%.3lf", dvalue); break;
+                    case DataFormat::FIX4: snprintf(buffer, sizeof(buffer), "%.4lf", dvalue); break;
                     default:               snprintf(buffer, sizeof(buffer), "%lf", dvalue);
                     }
                     result = std::string(buffer);
@@ -145,6 +149,7 @@ namespace libsmamodbus {
                 case DataFormat::FIX1:  result /= 10.0; break;
                 case DataFormat::FIX2:  result /= 100.0; break;
                 case DataFormat::FIX3:  result /= 1000.0; break;
+                case DataFormat::FIX4:  result /= 10000.0; break;
                 }
             }
             return result;
