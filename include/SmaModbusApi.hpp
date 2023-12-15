@@ -66,9 +66,8 @@ namespace libsmamodbus {
         }
 
         bool setPowerRangeInWatts(double minPower, double maxPower) {
-            SmaModbusValue value = readRegister(Register30233());   // get inverter nominal power in watts
-            if (value.isValid()) {
-                double nominal_power = double(value);
+            double nominal_power = getNominalPower();
+            if (SmaModbusValue::isNaN(nominal_power) == false) {
                 bool result = setPowerRangeInPercent(100.0 * minPower / nominal_power, 100.0 * maxPower / nominal_power);
                 return result;
             }
@@ -76,8 +75,13 @@ namespace libsmamodbus {
         }
 
         double getNominalPower(void) {
-            return 2500.00;
+            SmaModbusValue value = readRegister(Register30233());   // get inverter nominal power in watts
+            if (value.isValid()) {
+                return double(value);
+            }
+            return SmaModbusValue::Double_NaN;
         }
+
     };
 
 }   // namespace libsmamodbus

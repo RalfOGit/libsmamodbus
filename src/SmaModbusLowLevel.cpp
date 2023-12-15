@@ -14,10 +14,10 @@ bool SmaModbusLowLevel::ensureConnection(void) {
 }
 
 
-uint64_t SmaModbusLowLevel::readUint(uint16_t addr, size_t nbytes,  SmaModbusException& exception, bool allow_exception, bool print_exception) {
-    std::vector<uint16_t> words = readWords(addr, nbytes / 2u, exception, allow_exception, false);
+uint64_t SmaModbusLowLevel::readUint(uint8_t unit_id, uint16_t addr, size_t nbytes,  SmaModbusException& exception, bool allow_exception, bool print_exception) {
+    std::vector<uint16_t> words = readWords(unit_id, addr, nbytes / 2u, exception, allow_exception, false);
     if (!exception.hasError() && (nbytes > sizeof(uint64_t) || words.size() * 2u != nbytes)) {
-        exception = SmaModbusException(InvalidNumberOfRegisters, 3, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
+        exception = SmaModbusException(InvalidNumberOfRegisters, unit_id, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
     }
     if (exception.hasError()) {
         if (print_exception) {
@@ -35,10 +35,10 @@ uint64_t SmaModbusLowLevel::readUint(uint16_t addr, size_t nbytes,  SmaModbusExc
 }
 
 
-std::string SmaModbusLowLevel::readString(uint16_t addr, size_t nbytes, SmaModbusException& exception, bool allow_exception, bool print_exception) {
-    std::vector<uint16_t> words = readWords(addr, nbytes / 2u, exception, allow_exception, false);
+std::string SmaModbusLowLevel::readString(uint8_t unit_id, uint16_t addr, size_t nbytes, SmaModbusException& exception, bool allow_exception, bool print_exception) {
+    std::vector<uint16_t> words = readWords(unit_id, addr, nbytes / 2u, exception, allow_exception, false);
     if (!exception.hasError() && words.size() * 2u != nbytes) {
-        exception = SmaModbusException(InvalidNumberOfRegisters, 3, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
+        exception = SmaModbusException(InvalidNumberOfRegisters, unit_id, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
     }
     if (exception.hasError()) {
         if (print_exception) {
@@ -57,11 +57,11 @@ std::string SmaModbusLowLevel::readString(uint16_t addr, size_t nbytes, SmaModbu
 }
 
 
-std::vector<uint16_t> SmaModbusLowLevel::readWords(uint16_t addr, size_t num_words, SmaModbusException& exception, bool allow_exception, bool print_exception) {
+std::vector<uint16_t> SmaModbusLowLevel::readWords(uint8_t unit_id, uint16_t addr, size_t num_words, SmaModbusException& exception, bool allow_exception, bool print_exception) {
     std::vector<uint16_t> result;
     try {
         ensureConnection();
-        ModbusRequest request(3, MBFunctionCode::ReadAnalogOutputHoldingRegisters, addr, (uint16_t)num_words);
+        ModbusRequest request(unit_id, MBFunctionCode::ReadAnalogOutputHoldingRegisters, addr, (uint16_t)num_words);
         modbus.sendRequest(request);
         ModbusResponse response = modbus.awaitResponse();
         auto values = response.registerValues();
@@ -69,7 +69,7 @@ std::vector<uint16_t> SmaModbusLowLevel::readWords(uint16_t addr, size_t num_wor
             result.push_back(value.reg());
         }
         if (result.size() != num_words) {
-            throw SmaModbusException(InvalidNumberOfRegisters, 3, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
+            throw SmaModbusException(InvalidNumberOfRegisters, unit_id, MBFunctionCode::ReadAnalogOutputHoldingRegisters);
         }
     }
     catch (ModbusException ex) {
@@ -85,15 +85,15 @@ std::vector<uint16_t> SmaModbusLowLevel::readWords(uint16_t addr, size_t num_wor
 }
 
 
-bool SmaModbusLowLevel::writeUint(uint16_t addr, size_t nbytes, uint64_t value, SmaModbusException& exception, bool allow_exception, bool print_exception) {
+bool SmaModbusLowLevel::writeUint(uint8_t unit_id, uint16_t addr, size_t nbytes, uint64_t value, SmaModbusException& exception, bool allow_exception, bool print_exception) {
     std::vector<uint16_t> words;
     for (size_t i = nbytes; i > 0; i -= 2) {
         words.push_back((uint16_t)(value >> ((i - 2) * 8u)));
     }
     if (words.size() * 2u != nbytes) {
-        throw SmaModbusException(InvalidNumberOfRegisters, 3, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters);
+        throw SmaModbusException(InvalidNumberOfRegisters, unit_id, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters);
     }
-    bool result = writeWords(addr, words, exception, allow_exception, false);
+    bool result = writeWords(unit_id, addr, words, exception, allow_exception, false);
     if (exception.hasError()) {
         if (print_exception) {
             printf("writeUint(%lu, %lu, %lu) => %s\n", (unsigned long)addr, (unsigned long)nbytes, (unsigned long)value, exception.toString().c_str());
@@ -106,7 +106,7 @@ bool SmaModbusLowLevel::writeUint(uint16_t addr, size_t nbytes, uint64_t value, 
 }
 
 
-bool SmaModbusLowLevel::writeString(uint16_t addr, size_t nbytes, const std::string& value, SmaModbusException& exception, bool allow_exception, bool print_exception) {
+bool SmaModbusLowLevel::writeString(uint8_t unit_id, uint16_t addr, size_t nbytes, const std::string& value, SmaModbusException& exception, bool allow_exception, bool print_exception) {
     std::string str(value);
     if (str.size() < nbytes) {
         str.append(nbytes - str.size(), 0);
@@ -116,9 +116,9 @@ bool SmaModbusLowLevel::writeString(uint16_t addr, size_t nbytes, const std::str
         words.push_back((uint16_t)(str[i] << 8) | (uint16_t)str[i + 1]);
     }
     if (words.size() * 2u != nbytes) {
-        throw SmaModbusException(InvalidNumberOfRegisters, 3, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters);
+        throw SmaModbusException(InvalidNumberOfRegisters, unit_id, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters);
     }
-    bool result = writeWords(addr, words, exception, allow_exception, false);
+    bool result = writeWords(unit_id, addr, words, exception, allow_exception, false);
     if (exception.hasError()) {
         if (print_exception) {
             printf("writeString(%lu, %lu, %s) => %s\n", (unsigned long)addr, (unsigned long)nbytes, value.c_str(), exception.toString().c_str());
@@ -131,14 +131,14 @@ bool SmaModbusLowLevel::writeString(uint16_t addr, size_t nbytes, const std::str
 }
 
 
-bool SmaModbusLowLevel::writeWords(uint16_t addr, const std::vector<uint16_t> &value, SmaModbusException& exception, bool allow_exception, bool print_exception) {
+bool SmaModbusLowLevel::writeWords(uint8_t unit_id, uint16_t addr, const std::vector<uint16_t> &value, SmaModbusException& exception, bool allow_exception, bool print_exception) {
     try {
         ensureConnection();
         std::vector<ModbusCell> modbus_cells;
         for (const auto& word : value) {
             modbus_cells.push_back(ModbusCell(word));
         }
-        ModbusRequest request(3, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters, addr, (uint16_t)modbus_cells.size(), modbus_cells);
+        ModbusRequest request(unit_id, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters, addr, (uint16_t)modbus_cells.size(), modbus_cells);
         modbus.sendRequest(request);
         ModbusResponse response = modbus.awaitResponse();
     }

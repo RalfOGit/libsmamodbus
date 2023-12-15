@@ -52,12 +52,12 @@ namespace libsmamodbus {
 
     public:
         //  Definitions for SMA NaN values
-        inline static uint32_t U32_NaN = 0xffffffff;
-        inline static int32_t  S32_NaN = 0x80000000;
-        inline static uint64_t U64_NaN = 0xffffffffffffffff;
-        inline static int64_t  S64_NaN = 0x8000000000000000;
-        inline static uint32_t Enum_NaN = 0x00fffffd;
-        inline static double   Double_NaN = nan("1");
+        inline static const uint32_t U32_NaN = 0xffffffff;
+        inline static const int32_t  S32_NaN = 0x80000000;
+        inline static const uint64_t U64_NaN = 0xffffffffffffffff;
+        inline static const int64_t  S64_NaN = 0x8000000000000000;
+        inline static const uint32_t Enum_NaN = 0x00fffffd;
+        inline static const double   Double_NaN = nan("1");
 
         static bool isNaN(double value) { return isnan(value); }
 
