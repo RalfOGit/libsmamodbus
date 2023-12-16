@@ -70,9 +70,10 @@ namespace libsmamodbus {
     class SmaModbusLowLevel {
 
     private:
-        MB::TCP::Connection modbus;
         std::string peer_ip;
         uint16_t    peer_port;
+        SmaModbusUnitID unit_id;
+        MB::TCP::Connection modbus;
 
         //!< ensure that the tcp connection is established, called by read and write methods for lazy initialization
         bool ensureConnection(void);
@@ -81,7 +82,7 @@ namespace libsmamodbus {
         /**
          *  Constructor; set member variables.
          */
-        SmaModbusLowLevel(const std::string& peer, const uint16_t port = 502) : peer_ip(peer), peer_port(port), modbus(-1) {}
+        SmaModbusLowLevel(const std::string& peer, const uint16_t port = 502, SmaModbusUnitID unitid = SmaModbusUnitID::DEVICE_0) : peer_ip(peer), peer_port(port), unit_id(unitid), modbus(-1) {}
 
         /**
          *  Destructor; close the tcp connection.
@@ -89,8 +90,20 @@ namespace libsmamodbus {
         ~SmaModbusLowLevel(void) {}
 
         /**
+         *  Get the unit id used for readRegister and writeRegister.
+         *  @return the unit id in use
+         */
+        SmaModbusUnitID getUnitID(void) const { return unit_id; }
+
+        /**
+         *  Set the unit id used for readRegister and writeRegister.
+         *  @param id the unit id to be used
+         */
+        void setUnitID(SmaModbusUnitID id) { unit_id = id; }
+        void setUnitID(uint8_t id) { setUnitID((SmaModbusUnitID)id); }
+
+        /**
          *  Read an integral value of nbytes from the given modbus address.
-         *  @param unit_id modbus unit id
          *  @param addr modbus address
          *  @param nbytes number of bytes to be read from the modbus address; must be an even number
          *  @param exception output parameter to receive any modbus exception information
@@ -98,11 +111,10 @@ namespace libsmamodbus {
          *  @param print_exception if true, the method will print exception information to stdout
          *  @return an uint64 value holding the bit pattern read from the modbus address
          */
-        uint64_t readUint(uint8_t unit_id, uint16_t addr, size_t nbytes  = 4, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
+        uint64_t readUint(uint16_t addr, size_t nbytes = 4, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
 
         /**
          *  Read a string value of nbytes from the given modbus address.
-         *  @param unit_id modbus unit id
          *  @param addr modbus address
          *  @param nbytes number of bytes to be read from the modbus address; must be an even number
          *  @param exception output parameter to receive any modbus exception information
@@ -110,7 +122,7 @@ namespace libsmamodbus {
          *  @param print_exception if true, the method will print exception information to stdout
          *  @return a string value holding characters read from the modbus address; this may include '\0' characters
          */
-        std::string readString(uint8_t unit_id, uint16_t addr, size_t nbytes = 16, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
+        std::string readString(uint16_t addr, size_t nbytes = 16, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
 
         /**
          *  Read a vector of uint16 values from the given modbus address. This is the most low-level read method.
@@ -122,11 +134,10 @@ namespace libsmamodbus {
          *  @param print_exception if true, the method will print exception information to stdout
          *  @return a vector of uint16 values as read from the modbus address
          */
-        std::vector<uint16_t> readWords(uint8_t unit_id, uint16_t addr, size_t num_words, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
+        std::vector<uint16_t> readWords(SmaModbusUnitID unit_id, uint16_t addr, size_t num_words, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
 
         /**
          *  Write an integral value of nbytes to the given modbus address.
-         *  @param unit_id modbus unit id
          *  @param addr modbus address
          *  @param nbytes number of bytes to be written to the modbus address; must be an even number
          *  @param value an uint64 value holding the bit pattern to be written to the modbus address
@@ -135,11 +146,10 @@ namespace libsmamodbus {
          *  @param print_exception if true, the method will print exception information to stdout
          *  @return true if successful
          */
-        bool writeUint(uint8_t unit_id, uint16_t addr, size_t nbytes, uint64_t value, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
+        bool writeUint(uint16_t addr, size_t nbytes, uint64_t value, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
 
         /**
          *  Write a string value of nbytes to the given modbus address.
-         *  @param unit_id modbus unit id
          *  @param addr modbus address
          *  @param nbytes number of bytes to be written to the modbus address; must be an even number
          *  @param value a string value to be written to the modbus address. The written string is extended to nbytes if necessary
@@ -148,7 +158,7 @@ namespace libsmamodbus {
          *  @param print_exception if true, the method will print exception information to stdout
          *  @return true if successful
          */
-        bool writeString(uint8_t unit_id, uint16_t addr, size_t nbytes, const std::string& value, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
+        bool writeString(uint16_t addr, size_t nbytes, const std::string& value, SmaModbusException& exception = SmaModbusException(), bool allow_exception = false, bool print_exception = true);
 
         /**
          *  Write a vector of uint16 values to the given modbus address. This is the most low-level write method.
@@ -160,7 +170,7 @@ namespace libsmamodbus {
          *  @param print_exception if true, the method will print exception information to stdout
          *  @return true if successful
          */
-        bool writeWords(uint8_t unit_id, uint16_t addr, const std::vector<uint16_t>& value, SmaModbusException& exception, bool allow_exception, bool print_exception);
+        bool writeWords(SmaModbusUnitID unit_id, uint16_t addr, const std::vector<uint16_t>& value, SmaModbusException& exception, bool allow_exception, bool print_exception);
     };
 
 }   // namespace libsmamodbus

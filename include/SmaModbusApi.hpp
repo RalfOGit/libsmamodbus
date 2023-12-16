@@ -11,7 +11,7 @@ namespace libsmamodbus {
 
     public:
         /** constructor */
-        SmaModbusApi(const std::string& peer, const uint16_t port) : SmaModbus(peer, port) {}
+        SmaModbusApi(const std::string& peer, const uint16_t port, SmaModbusUnitID unit_id) : SmaModbus(peer, port, unit_id) {}
 
         /** destructor */
         ~SmaModbusApi(void) {}

@@ -14,9 +14,6 @@ namespace libsmamodbus {
      *  It provides abstractions for register definitions and methods to read and write registers.
      */
     class SmaModbus : public SmaModbusLowLevel {
-    protected:
-        SmaModbusUnitID unitID;
-
     public:
 
         /**
@@ -60,7 +57,7 @@ namespace libsmamodbus {
         };
 
         /** Constructor; set member variables. */
-        SmaModbus(const std::string& peer, const uint16_t port = 502, SmaModbusUnitID unit_id  = SmaModbusUnitID::DEVICE_0) : SmaModbusLowLevel(peer, port), unitID(unit_id) {}
+        SmaModbus(const std::string& peer, const uint16_t port = 502, SmaModbusUnitID unit_id  = SmaModbusUnitID::DEVICE_0) : SmaModbusLowLevel(peer, port, unit_id) {}
 
         /** Destructor; close the tcp connection. */
         ~SmaModbus(void) {}
@@ -84,19 +81,11 @@ namespace libsmamodbus {
         }
 
         /**
-         *  Get the unit id used for readRegister and writeRegister.
-         *  @return the unit id in use
+         *  Set the default unit id to be used for readRegister and writeRegister.
+         *  The default unit id is choose to be the first map entry of the device map, if it is between 1 and 255
+         *  @return the unit id to be used, 0xff in case of a failure to obtain a default unit id
          */
-        SmaModbusUnitID getUnitID(void) const { return unitID; }
-
-        /**
-         *  Set the unit id used for readRegister and writeRegister.
-         *  @param unit_id the unit id to be used
-         */
-        void setUnitID(SmaModbusUnitID unit_id) { unitID = unit_id; }
-        void setUnitID(uint8_t unit_id) { setUnitID((SmaModbusUnitID)unit_id); }
         uint8_t setDefaultUnitID(void);
-
 
         // Register definitions
         static RegisterDefinition Register30233(void) { static auto reg = RegisterDefinition(30233, 2, DataType::U32, DataFormat::FIX0, AccessMode::RO, Category::Normal, "Inverter.WMax", "Nominal active power limit"); return reg; }
