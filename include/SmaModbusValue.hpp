@@ -62,10 +62,10 @@ namespace libsmamodbus {
         static bool isNaN(double value) { return isnan(value); }
 
         SmaModbusValue(void) : u64(0), type(DataType::INVALID), format(DataFormat::RAW) {}
-        SmaModbusValue(uint32_t value, DataType typ = DataType::U32, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
-        SmaModbusValue(int32_t  value, DataType typ = DataType::S32, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)(uint32_t)value, typ, fmt) {}
-        SmaModbusValue(int64_t  value, DataType typ = DataType::S64, DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
-        SmaModbusValue(uint64_t value, DataType typ = DataType::U64, DataFormat fmt = DataFormat::RAW) : u64(value), type(typ), format(fmt) {
+        SmaModbusValue(uint32_t value, const DataType typ = DataType::U32, const DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
+        SmaModbusValue(int32_t  value, const DataType typ = DataType::S32, const DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)(uint32_t)value, typ, fmt) {}
+        SmaModbusValue(int64_t  value, const DataType typ = DataType::S64, const DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
+        SmaModbusValue(uint64_t value, const DataType typ = DataType::U64, const DataFormat fmt = DataFormat::RAW) : u64(value), type(typ), format(fmt) {
             uint64_t fix_multiplier = 1;
             switch (format) {
             case DataFormat::FIX1: fix_multiplier = 10; break;
@@ -80,9 +80,10 @@ namespace libsmamodbus {
             case DataType::S64:  if (u64 != S64_NaN) u64 = (uint64_t)((int64_t)u64 * (int64_t)fix_multiplier); break;
             }
         }
-        SmaModbusValue(const std::string& value, DataType typ = DataType::STR32, DataFormat fmt = DataFormat::RAW) : u64(0), str(value), type(typ), format(fmt) {}
+        SmaModbusValue(const std::string& value, const DataType typ = DataType::STR32, const DataFormat fmt = DataFormat::RAW) : u64(0), str(value), type(typ), format(fmt) {}
 
-        SmaModbusValue(double value, DataType typ = DataType::U32, DataFormat fmt = DataFormat::RAW) {
+        SmaModbusValue(double value, const DataType typ = DataType::U32, const DataFormat fmt = DataFormat::RAW) {
+            u64 = 0;
             type = typ;
             format = fmt;
             if (!isNaN(value)) {
@@ -167,6 +168,14 @@ namespace libsmamodbus {
                 }
             }
             return result;
+        }
+
+        bool is32BitType(void) const {
+            return (type == DataType::U32 || type == DataType::S32 || type == DataType::ENUM);
+        }
+
+        bool is64BitType(void) const {
+            return (type == DataType::U64 || type == DataType::S64);
         }
     };
 

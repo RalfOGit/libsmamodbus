@@ -58,7 +58,10 @@ bool SmaModbus::writeRegister(const RegisterDefinition& reg, const SmaModbusValu
         case DataType::S64:
         case DataType::U64:
         case DataType::ENUM: {
-            uint64_t reg_value = SmaModbusValue((uint64_t)value, reg.type, reg.format); // apply the register type and format to the given value
+            uint64_t reg_value = value.operator uint64_t();
+            if (value.getDataType() != reg.type || value.getDataFormat() != reg.format) {
+                reg_value = SmaModbusValue(value.operator double(), reg.type, reg.format); // apply the register type and format to the given value
+            }
             result = writeUint(reg.addr, reg.size * 2u, reg_value, exception, false, true);
             break;
         }
