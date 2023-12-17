@@ -8,6 +8,7 @@ set(COMMON_SOURCES
     src/SmaModbus.cpp
     src/SmaModbusApi.cpp
     src/SmaModbusLowLevel.cpp
+    src/SmaModbusValue.cpp
 )
 
 add_library(${PROJECT_NAME} STATIC
@@ -21,7 +22,7 @@ add_dependencies(${PROJECT_NAME} Modbus_Core Modbus_TCP)
 target_include_directories(${PROJECT_NAME} PUBLIC include Modbus_Core Modbus_TCP)
 
 if (MSVC)
-target_link_libraries(${PROJECT_NAME} Modbus_Core Modbus_TCP ws2_32.lib Iphlpapi.lib)
+target_link_libraries(${PROJECT_NAME} Modbus_Core Modbus_TCP ws2_32.lib)
 else()
 target_link_libraries(${PROJECT_NAME} Modbus_Core Modbus_TCP)
 endif()

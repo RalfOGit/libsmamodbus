@@ -21,6 +21,7 @@ namespace libsmamodbus {
         ENUM = 5,
         STR32 = 6,
     };
+    std::string toString(const DataType& type);
 
     /**
      *  Enumeration of data formats used in SMA modbus registers.
@@ -38,6 +39,7 @@ namespace libsmamodbus {
         UTF8 = 10,
         FIRMWARE = 11
     };
+    std::string toString(const DataFormat& format);
 
     /**
      *  Class holding an SMA modbus data value together with its data type and data format.
@@ -45,22 +47,24 @@ namespace libsmamodbus {
      */
     class SmaModbusValue {
     protected:
-        uint64_t u64;
-        std::string str;
-        DataType type;
-        DataFormat format;
+        uint64_t u64;       //!< value for numeric types incl. enum/tags
+        std::string str;    //!< value for string type
+        DataType type;      //!< data type
+        DataFormat format;  //!< data format
 
     public:
         //  Definitions for SMA NaN values
-        inline static const uint32_t U32_NaN = 0xffffffff;
-        inline static const int32_t  S32_NaN = 0x80000000;
-        inline static const uint64_t U64_NaN = 0xffffffffffffffff;
-        inline static const int64_t  S64_NaN = 0x8000000000000000;
-        inline static const uint32_t Enum_NaN = 0x00fffffd;
-        inline static const double   Double_NaN = nan("1");
+        static const uint32_t U32_NaN = 0xffffffff;          //!< NaN value for SMA data type U32
+        static const int32_t  S32_NaN = 0x80000000;          //!< NaN value for SMA data type S32
+        static const uint64_t U64_NaN = 0xffffffffffffffff;  //!< NaN value for SMA data type U64
+        static const int64_t  S64_NaN = 0x8000000000000000;  //!< NaN value for SMA data type S64
+        static const uint32_t Enum_NaN = 0x00fffffd;         //!< NaN value for SMA data type ENUM
+        static const double   Double_NaN;                    //!< NaN value for double data types
 
+        /** Check if the given double value is a nan value */
         static bool isNaN(double value) { return isnan(value); }
 
+        /** Default constructor. */
         SmaModbusValue(void) : u64(0), type(DataType::INVALID), format(DataFormat::RAW) {}
         SmaModbusValue(uint32_t value, const DataType typ = DataType::U32, const DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
         SmaModbusValue(int32_t  value, const DataType typ = DataType::S32, const DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)(uint32_t)value, typ, fmt) {}
@@ -110,7 +114,29 @@ namespace libsmamodbus {
         operator int32_t(void) const { return (int32_t)u64; }
         operator uint64_t(void) const { return (uint64_t)u64; }
         operator int64_t(void) const { return (int64_t)u64; }
-        operator std::string(void) const {
+        operator std::string(void) const { return str; }
+        operator double(void) const {
+            double result = nan("2");
+            switch (type) {
+            case DataType::U32:  result = (u64 == U32_NaN ? Double_NaN : (double)u64); break;
+            case DataType::S32:  result = (u64 == S32_NaN ? Double_NaN : (double)(int64_t)u64); break;
+            case DataType::U64:  result = (u64 == S32_NaN ? Double_NaN : (double)u64); break;
+            case DataType::S64:  result = (u64 == S32_NaN ? Double_NaN : (double)(int64_t)u64); break;
+            case DataType::ENUM: result = (u64 == Enum_NaN ? Double_NaN : (double)u64); break;
+            }
+
+            if (!isNaN(result)) {
+                switch (format) {
+                case DataFormat::FIX1:  result /= 10.0; break;
+                case DataFormat::FIX2:  result /= 100.0; break;
+                case DataFormat::FIX3:  result /= 1000.0; break;
+                case DataFormat::FIX4:  result /= 10000.0; break;
+                }
+            }
+            return result;
+        }
+
+        std::string toString(void) const {
             std::string result;
             if (type == DataType::STR32) {
                 result = str;
@@ -135,26 +161,6 @@ namespace libsmamodbus {
             }
             return result;
         }
-        operator double(void) const {
-            double result = nan("2");
-            switch (type) {
-            case DataType::U32:  result = (u64 == U32_NaN ? Double_NaN : (double)u64); break;
-            case DataType::S32:  result = (u64 == S32_NaN ? Double_NaN : (double)(int64_t)u64); break;
-            case DataType::U64:  result = (u64 == S32_NaN ? Double_NaN : (double)u64); break;
-            case DataType::S64:  result = (u64 == S32_NaN ? Double_NaN : (double)(int64_t)u64); break;
-            case DataType::ENUM: result = (u64 == Enum_NaN ? Double_NaN : (double)u64); break;
-            }
-
-            if (!isNaN(result)) {
-                switch (format) {
-                case DataFormat::FIX1:  result /= 10.0; break;
-                case DataFormat::FIX2:  result /= 100.0; break;
-                case DataFormat::FIX3:  result /= 1000.0; break;
-                case DataFormat::FIX4:  result /= 10000.0; break;
-                }
-            }
-            return result;
-        }
 
         bool isValid(void) const {
             bool result = false;
@@ -168,14 +174,6 @@ namespace libsmamodbus {
                 }
             }
             return result;
-        }
-
-        bool is32BitType(void) const {
-            return (type == DataType::U32 || type == DataType::S32 || type == DataType::ENUM);
-        }
-
-        bool is64BitType(void) const {
-            return (type == DataType::U64 || type == DataType::S64);
         }
     };
 

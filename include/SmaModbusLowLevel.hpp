@@ -82,7 +82,7 @@ namespace libsmamodbus {
         /**
          *  Constructor; set member variables.
          */
-        SmaModbusLowLevel(const std::string& peer, const uint16_t port = 502, SmaModbusUnitID unitid = SmaModbusUnitID::DEVICE_0) : peer_ip(peer), peer_port(port), unit_id(unitid), modbus(-1) {}
+        SmaModbusLowLevel(const std::string& peer, uint16_t port = 502, const SmaModbusUnitID unitid = SmaModbusUnitID::DEVICE_0) : peer_ip(peer), peer_port(port), unit_id(unitid), modbus(-1) {}
 
         /**
          *  Destructor; close the tcp connection.

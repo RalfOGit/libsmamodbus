@@ -9,6 +9,32 @@ using namespace MB::utils;
 using namespace libsmamodbus;
 
 
+std::string SmaModbus::toString(const AccessMode& mode) {
+    switch (mode) {
+    case AccessMode::RO:  return "RO";
+    case AccessMode::WO:  return "WO";
+    case AccessMode::RW:  return "RW";
+    }
+    return "INVALID";
+}
+
+std::string SmaModbus::toString(const Category& category) {
+    switch (category) {
+    case Category::Normal:                  return "Normal";
+    case Category::GridGuardCodeProtected:  return "GridGuardCodeProtected";
+    case Category::DeviceControlObject:     return "DeviceControlObject";
+    case Category::CyclicWritingWarning:    return "CyclicWritingWarning";
+    }
+    return "INVALID";
+}
+
+std::string SmaModbus::RegisterDefinition::toString(void) const {
+    char buff[512];
+    snprintf(buff, sizeof(buff), "%u %-5s %-4s %-2s %-20s", (unsigned)addr, ::toString(type).c_str(), ::toString(format).c_str(), SmaModbus::toString(mode).c_str(), identifier.c_str());
+    return std::string(buff);
+}
+
+
 SmaModbusValue SmaModbus::readRegister(const RegisterDefinition& reg) {
     SmaModbusException exception;
     SmaModbusValue value;
@@ -43,6 +69,7 @@ SmaModbusValue SmaModbus::readRegister(const RegisterDefinition& reg) {
     }
     return value;
 }
+
 
 bool SmaModbus::writeRegister(const RegisterDefinition& reg, const SmaModbusValue& value) {
     SmaModbusException exception;
@@ -104,6 +131,31 @@ std::vector<SmaModbus::SmaModbusDeviceEntry> SmaModbus::getDeviceMap(void) {
     }
     setUnitID(previous_id);
     return entries;
+}
+
+
+void SmaModbus::printRegister(const RegisterDefinition& reg, const SmaModbusValue& value) const {
+    switch (reg.type) {
+    case DataType::S32:
+    case DataType::U32:
+    case DataType::S64:
+    case DataType::U64:
+    case DataType::ENUM: {
+        uint64_t reg_value = value.operator uint64_t();
+        if (value.getDataType() != reg.type || value.getDataFormat() != reg.format) {
+            reg_value = SmaModbusValue(value.operator double(), reg.type, reg.format); // apply the register type and format to the given value
+        }
+        printf("%s:  %08llx %llu\n", reg.toString().c_str(), value.operator uint64_t(), value.operator uint64_t());
+        break;
+    }
+    case DataType::STR32:
+        printf("%s:  %s\n", reg.toString().c_str(), value.operator std::string().c_str());
+        break;
+    default: {
+        printf("%s:  %08llx %llu %s\n", reg.toString().c_str(), value.operator uint64_t(), value.operator uint64_t(), value.operator std::string().c_str());
+        break;
+    }
+    }
 }
 
 
