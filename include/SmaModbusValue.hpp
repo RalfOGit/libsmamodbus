@@ -46,12 +46,6 @@ namespace libsmamodbus {
      * 
      */
     class SmaModbusValue {
-    protected:
-        uint64_t u64;       //!< value for numeric types incl. enum/tags
-        std::string str;    //!< value for string type
-        DataType type;      //!< data type
-        DataFormat format;  //!< data format
-
     public:
         //  Definitions for SMA NaN values
         static const uint32_t U32_NaN = 0xffffffff;          //!< NaN value for SMA data type U32
@@ -61,14 +55,18 @@ namespace libsmamodbus {
         static const uint32_t Enum_NaN = 0x00fffffd;         //!< NaN value for SMA data type ENUM
         static const double   Double_NaN;                    //!< NaN value for double data types
 
+        uint64_t    u64;    //!< value for numeric types incl. enum/tags
+        std::string str;    //!< value for string type
+        DataType    type;   //!< data type
+        DataFormat  format; //!< data format
+
         /** Check if the given double value is a nan value */
         static bool isNaN(double value) { return isnan(value); }
 
         /** Default constructor. */
         SmaModbusValue(void) : u64(0), type(DataType::INVALID), format(DataFormat::RAW) {}
-        SmaModbusValue(uint32_t value, const DataType typ = DataType::U32, const DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
-        SmaModbusValue(int32_t  value, const DataType typ = DataType::S32, const DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)(uint32_t)value, typ, fmt) {}
-        SmaModbusValue(int64_t  value, const DataType typ = DataType::S64, const DataFormat fmt = DataFormat::RAW) : SmaModbusValue((uint64_t)value, typ, fmt) {}
+
+        /** Constructor for numeric integer values. */
         SmaModbusValue(uint64_t value, const DataType typ = DataType::U64, const DataFormat fmt = DataFormat::RAW) : u64(value), type(typ), format(fmt) {
             uint64_t fix_multiplier = 1;
             switch (format) {
@@ -84,13 +82,14 @@ namespace libsmamodbus {
             case DataType::S64:  if (u64 != S64_NaN) u64 = (uint64_t)((int64_t)u64 * (int64_t)fix_multiplier); break;
             }
         }
+
+        /** Constructor for string values. */
         SmaModbusValue(const std::string& value, const DataType typ = DataType::STR32, const DataFormat fmt = DataFormat::RAW) : u64(0), str(value), type(typ), format(fmt) {}
 
-        SmaModbusValue(double value, const DataType typ = DataType::U32, const DataFormat fmt = DataFormat::RAW) {
-            u64 = 0;
-            type = typ;
-            format = fmt;
-            if (!isNaN(value)) {
+        /** Constructor for numeric floating point values. */
+        SmaModbusValue(double value, const DataType typ = DataType::U32, const DataFormat fmt = DataFormat::RAW) : u64(0), type(typ), format(fmt) {
+            const bool isValid = !isNaN(value);
+            if (isValid) {
                 switch (format) {
                 case DataFormat::FIX1: value *= 10.0; break;
                 case DataFormat::FIX2: value *= 100.0; break;
@@ -99,23 +98,16 @@ namespace libsmamodbus {
                 }
             }
             switch (type) {
-            case DataType::U32:  u64 = (uint64_t)(value >= 0 && !isNaN(value) ? (uint64_t)(uint32_t)(value + 0.5) : U32_NaN); break;
-            case DataType::S32:  u64 = (uint64_t)(isNaN(value) ? S32_NaN : (uint64_t)(uint32_t)(int32_t)(value >= 0 ? value + 0.5 : value - 0.5)); break;
-            case DataType::U64:  u64 = (uint64_t)(value >= 0 && !isNaN(value) ? (uint64_t)(value + 0.5) : U64_NaN); break;
-            case DataType::S64:  u64 = (uint64_t)(isNaN(value) ? S64_NaN : (uint64_t)(int64_t)(value >= 0 ? value + 0.5 : value - 0.5)); break;
-            case DataType::ENUM: u64 = (uint64_t)(value >= 0 && !isNaN(value) ? (uint64_t)(uint32_t)(value + 0.5) : Enum_NaN); break;
+            case DataType::U32:  u64 = (uint64_t)(value >= 0 && isValid ? (uint64_t)(uint32_t)(value + 0.5) : U32_NaN); break;
+            case DataType::S32:  u64 = (uint64_t)(isValid ? (uint64_t)(uint32_t)(int32_t)(value >= 0 ? value + 0.5 : value - 0.5) : S32_NaN); break;
+            case DataType::U64:  u64 = (uint64_t)(value >= 0 && isValid ? (uint64_t)(value + 0.5) : U64_NaN); break;
+            case DataType::S64:  u64 = (uint64_t)(isValid ? (uint64_t)(int64_t)(value >= 0 ? value + 0.5 : value - 0.5) : S64_NaN); break;
+            case DataType::ENUM: u64 = (uint64_t)(value >= 0 && isValid ? (uint64_t)(uint32_t)(value + 0.5) : Enum_NaN); break;
             }
         }
 
-        DataType getDataType(void) const { return type; }
-        DataFormat getDataFormat(void) const { return format; }
-
-        operator uint32_t(void) const { return (uint32_t)u64; }
-        operator int32_t(void) const { return (int32_t)u64; }
-        operator uint64_t(void) const { return (uint64_t)u64; }
-        operator int64_t(void) const { return (int64_t)u64; }
-        operator std::string(void) const { return str; }
-        operator double(void) const {
+        /** Convert numeric value to floating point */
+        double toDouble(void) const {
             double result = nan("2");
             switch (type) {
             case DataType::U32:  result = (u64 == U32_NaN ? Double_NaN : (double)u64); break;
@@ -136,13 +128,14 @@ namespace libsmamodbus {
             return result;
         }
 
+        /** Convert value to a string representation. */
         std::string toString(void) const {
             std::string result;
             if (type == DataType::STR32) {
                 result = str;
             }
             else {
-                double dvalue = this->operator double();
+                double dvalue = toDouble();
                 if (isNaN(dvalue)) {
                     result = "NaN";
                 }
@@ -162,6 +155,7 @@ namespace libsmamodbus {
             return result;
         }
 
+        /** Check if the value is valid. Invalid data types and NaN values are considered as invalid. */
         bool isValid(void) const {
             bool result = false;
             if (type != DataType::INVALID) {

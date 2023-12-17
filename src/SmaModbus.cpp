@@ -35,7 +35,7 @@ std::string SmaModbus::RegisterDefinition::toString(void) const {
 }
 
 
-SmaModbusValue SmaModbus::readRegister(const RegisterDefinition& reg) {
+SmaModbusValue SmaModbus::readRegister(const RegisterDefinition& reg, bool print) {
     SmaModbusException exception;
     SmaModbusValue value;
 
@@ -67,14 +67,20 @@ SmaModbusValue SmaModbus::readRegister(const RegisterDefinition& reg) {
     if (exception.hasError()) {
         printf("readRegister(%lu) => %s\n", reg.addr, exception.toString().c_str());
     }
+    if (print) {
+        printRegister(reg, value);
+    }
     return value;
 }
 
 
-bool SmaModbus::writeRegister(const RegisterDefinition& reg, const SmaModbusValue& value) {
+bool SmaModbus::writeRegister(const RegisterDefinition& reg, const SmaModbusValue& value, bool print) {
     SmaModbusException exception;
     bool result = false;
 
+    if (print) {
+        printRegister(reg, value);
+    }
     if (reg.mode == AccessMode::RO) {
         exception = SmaModbusException(SmaModbusErrorCode::InvalidAccessMode, 3, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters);
     }
@@ -85,20 +91,20 @@ bool SmaModbus::writeRegister(const RegisterDefinition& reg, const SmaModbusValu
         case DataType::S64:
         case DataType::U64:
         case DataType::ENUM: {
-            uint64_t reg_value = value.operator uint64_t();
-            if (value.getDataType() != reg.type || value.getDataFormat() != reg.format) {
-                reg_value = SmaModbusValue(value.operator double(), reg.type, reg.format); // apply the register type and format to the given value
+            uint64_t reg_value = value.u64;
+            if (value.type != reg.type || value.format != reg.format) {
+                reg_value = SmaModbusValue(value.toDouble(), reg.type, reg.format).u64; // apply the register type and format to the given value
             }
             result = writeUint(reg.addr, reg.size * 2u, reg_value, exception, false, true);
             break;
         }
-        case DataType::STR32:result = writeString(reg.addr, reg.size * 2u, (std::string)value, exception, false, true); break;
+        case DataType::STR32:result = writeString(reg.addr, reg.size * 2u, value.str, exception, false, true); break;
         default:  exception = SmaModbusException(SmaModbusErrorCode::InvalidFormatType, 3, MBFunctionCode::WriteMultipleAnalogOutputHoldingRegisters); break;
         }
     }
 
     if (exception.hasError() || result == false) {
-        printf("writeRegister(%lu, %s) => %s\n", reg.addr, ((std::string)value).c_str(), exception.toString().c_str());
+        printf("writeRegister(%lu, %s) => %s\n", reg.addr, value.str.c_str(), exception.toString().c_str());
         return false;
     }
     return result;
@@ -141,18 +147,18 @@ void SmaModbus::printRegister(const RegisterDefinition& reg, const SmaModbusValu
     case DataType::S64:
     case DataType::U64:
     case DataType::ENUM: {
-        uint64_t reg_value = value.operator uint64_t();
-        if (value.getDataType() != reg.type || value.getDataFormat() != reg.format) {
-            reg_value = SmaModbusValue(value.operator double(), reg.type, reg.format); // apply the register type and format to the given value
+        uint64_t reg_value = value.u64;
+        if (value.type != reg.type || value.format != reg.format) {
+            reg_value = SmaModbusValue(value.toDouble(), reg.type, reg.format).u64; // apply the register type and format to the given value
         }
-        printf("%s:  %08llx %llu\n", reg.toString().c_str(), value.operator uint64_t(), value.operator uint64_t());
+        printf("%s:  %08llx %llu\n", reg.toString().c_str(), value.u64, value.u64);
         break;
     }
     case DataType::STR32:
-        printf("%s:  %s\n", reg.toString().c_str(), value.operator std::string().c_str());
+        printf("%s:  %s\n", reg.toString().c_str(), value.str.c_str());
         break;
     default: {
-        printf("%s:  %08llx %llu %s\n", reg.toString().c_str(), value.operator uint64_t(), value.operator uint64_t(), value.operator std::string().c_str());
+        printf("%s:  %08llx %llu %s\n", reg.toString().c_str(), value.u64, value.u64, value.str.c_str());
         break;
     }
     }

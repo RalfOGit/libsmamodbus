@@ -100,7 +100,7 @@ namespace libsmamodbus {
         double getNominalPower(void) {
             SmaModbusValue value = readRegister(Register30233());   // get inverter nominal power in watts
             if (value.isValid()) {
-                return double(value);
+                return value.toDouble();
             }
             return SmaModbusValue::Double_NaN;
         }
@@ -110,10 +110,28 @@ namespace libsmamodbus {
          * @return power in watts; >0 means power import, <0 means power export
          */
         double getGridPowerInWatts(void) {
-            int32_t positiveActivePowerTotal = readRegister(SmaModbus::Register30865());
-            int32_t negativeActivePowerTotal = readRegister(SmaModbus::Register30867());
-            return positiveActivePowerTotal - negativeActivePowerTotal;
+            double total_in  = readRegister(SmaModbus::Register30865()).toDouble();
+            double total_out = readRegister(SmaModbus::Register30867()).toDouble();
+            return total_in - total_out;
         }
+
+        /**
+         * Get power values at grid connection point.
+         * @return power in watts; >0 means power import, <0 means power export
+         */
+        void getGridPowerInWatts(double &total, double& phaseL1, double& phaseL2, double& phaseL3) {
+            total = getGridPowerInWatts();
+            double l1_out = readRegister(SmaModbus::Register31259()).toDouble();
+            double l2_out = readRegister(SmaModbus::Register31261()).toDouble();
+            double l3_out = readRegister(SmaModbus::Register31263()).toDouble();
+            double l1_in  = readRegister(SmaModbus::Register31265()).toDouble();
+            double l2_in  = readRegister(SmaModbus::Register31267()).toDouble();
+            double l3_in  = readRegister(SmaModbus::Register31269()).toDouble();
+            phaseL1 = l1_in - l1_out;
+            phaseL2 = l2_in - l2_out;
+            phaseL3 = l3_in - l3_out;
+        }
+
     };
 
 }   // namespace libsmamodbus

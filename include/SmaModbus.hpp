@@ -72,7 +72,7 @@ namespace libsmamodbus {
          *  @param reg the SMA modbus register definition
          *  @return a value object holding the value itself and associated metadata
          */
-        SmaModbusValue readRegister(const RegisterDefinition& reg);
+        SmaModbusValue readRegister(const RegisterDefinition& reg, bool print = false);
 
         /**
          *  Write SMA modbus register.
@@ -80,9 +80,9 @@ namespace libsmamodbus {
          *  @param value the value object holding the value itself and associated metadata
          *  @return true if successful, false otherwise
          */
-        bool writeRegister(const RegisterDefinition& reg, const SmaModbusValue& value);
-        bool writeRegister(const RegisterDefinition& reg, double value) {
-            return writeRegister(reg, SmaModbusValue(value, reg.type, reg.format));
+        bool writeRegister(const RegisterDefinition& reg, const SmaModbusValue& value, bool print = false);
+        bool writeRegister(const RegisterDefinition& reg, double value, bool print = false) {
+            return writeRegister(reg, SmaModbusValue(value, reg.type, reg.format), print);
         }
 
         /**
@@ -117,12 +117,12 @@ namespace libsmamodbus {
 
         static RegisterDefinition Register30865(void) { static auto reg = RegisterDefinition(30865, 2, DataType::S32, DataFormat::FIX0, AccessMode::RO, Category::Normal, "Metering.GridMs.W.TotIn", "Grid metering total watts import"); return reg; }
         static RegisterDefinition Register30867(void) { static auto reg = RegisterDefinition(30867, 2, DataType::S32, DataFormat::FIX0, AccessMode::RO, Category::Normal, "Metering.GridMs.W.TotOut", "Grid etering total watts export"); return reg; }
-        static RegisterDefinition Register31259(void) { static auto reg = RegisterDefinition(31259, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "Metering.GridMs.W.phsA", "Grid metering watts export phase A"); return reg; }
-        static RegisterDefinition Register31261(void) { static auto reg = RegisterDefinition(31261, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "Metering.GridMs.W.phsB", "Grid metering watts export phase B"); return reg; }
-        static RegisterDefinition Register31263(void) { static auto reg = RegisterDefinition(31263, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "Metering.GridMs.W.phsC", "Grid metering watts export phase C"); return reg; }
-        static RegisterDefinition Register31265(void) { static auto reg = RegisterDefinition(31265, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "Metering.GridMs.WIn.phsA", "Grid metering watts import phase A"); return reg; }
-        static RegisterDefinition Register31267(void) { static auto reg = RegisterDefinition(31267, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "Metering.GridMs.WIn.phsB", "Grid metering watts import phase B"); return reg; }
-        static RegisterDefinition Register31269(void) { static auto reg = RegisterDefinition(31269, 2, DataType::U32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "Metering.GridMs.WIn.phsC", "Grid metering watts import phase C"); return reg; }
+        static RegisterDefinition Register31259(void) { static auto reg = RegisterDefinition(31259, 2, DataType::U32, DataFormat::FIX0, AccessMode::RO, Category::DeviceControlObject, "Metering.GridMs.W.phsA", "Grid metering watts export phase A"); return reg; }
+        static RegisterDefinition Register31261(void) { static auto reg = RegisterDefinition(31261, 2, DataType::U32, DataFormat::FIX0, AccessMode::RO, Category::DeviceControlObject, "Metering.GridMs.W.phsB", "Grid metering watts export phase B"); return reg; }
+        static RegisterDefinition Register31263(void) { static auto reg = RegisterDefinition(31263, 2, DataType::U32, DataFormat::FIX0, AccessMode::RO, Category::DeviceControlObject, "Metering.GridMs.W.phsC", "Grid metering watts export phase C"); return reg; }
+        static RegisterDefinition Register31265(void) { static auto reg = RegisterDefinition(31265, 2, DataType::U32, DataFormat::FIX0, AccessMode::RO, Category::DeviceControlObject, "Metering.GridMs.WIn.phsA", "Grid metering watts import phase A"); return reg; }
+        static RegisterDefinition Register31267(void) { static auto reg = RegisterDefinition(31267, 2, DataType::U32, DataFormat::FIX0, AccessMode::RO, Category::DeviceControlObject, "Metering.GridMs.WIn.phsB", "Grid metering watts import phase B"); return reg; }
+        static RegisterDefinition Register31269(void) { static auto reg = RegisterDefinition(31269, 2, DataType::U32, DataFormat::FIX0, AccessMode::RO, Category::DeviceControlObject, "Metering.GridMs.WIn.phsC", "Grid metering watts import phase C"); return reg; }
 
         static RegisterDefinition Register40149(void) { static auto reg = RegisterDefinition(40149, 2, DataType::S32, DataFormat::FIX0, AccessMode::WO, Category::DeviceControlObject, "Inverter.WModCfg.WCtlComCfg.WSpt", "Active power setpoint"); return reg; }
         static RegisterDefinition Register40151(void) { static auto reg = RegisterDefinition(40151, 2, DataType::ENUM, DataFormat::RAW, AccessMode::WO, Category::DeviceControlObject, "Inverter.WModCfg.WCtlComCfg.WCtlComAct", "Eff./reac. power control via communication"); return reg; }
