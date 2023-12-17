@@ -66,27 +66,19 @@ namespace libsmamodbus {
         /** Default constructor. */
         SmaModbusValue(void) : u64(0), type(DataType::INVALID), format(DataFormat::RAW) {}
 
-        /** Constructor for numeric integer values. */
+        /** Construct from numeric integer value. */
         SmaModbusValue(uint64_t value, const DataType typ = DataType::U64, const DataFormat fmt = DataFormat::RAW) : u64(value), type(typ), format(fmt) {
-            uint64_t fix_multiplier = 1;
-            switch (format) {
-            case DataFormat::FIX1: fix_multiplier = 10; break;
-            case DataFormat::FIX2: fix_multiplier = 100; break;
-            case DataFormat::FIX3: fix_multiplier = 1000; break;
-            case DataFormat::FIX4: fix_multiplier = 10000; break;
-            }
-            switch (type) {
-            case DataType::U32:  if (u64 != U32_NaN) u64 = (uint64_t)((uint32_t)u64 * (uint32_t)fix_multiplier); break;
-            case DataType::S32:  if (u64 != S32_NaN) u64 = (uint64_t)(uint32_t)((int32_t)u64 * (int32_t)fix_multiplier); break;
-            case DataType::U64:  if (u64 != U64_NaN) u64 = u64 * fix_multiplier; break;
-            case DataType::S64:  if (u64 != S64_NaN) u64 = (uint64_t)((int64_t)u64 * (int64_t)fix_multiplier); break;
+            switch (type) {       // ensure 32-bit significant values to avoid failures on NaN checks
+            case DataType::U32:
+            case DataType::S32:
+            case DataType::ENUM:  u64 &= (uint32_t)-1; break;
             }
         }
 
-        /** Constructor for string values. */
+        /** Construct from string value. */
         SmaModbusValue(const std::string& value, const DataType typ = DataType::STR32, const DataFormat fmt = DataFormat::RAW) : u64(0), str(value), type(typ), format(fmt) {}
 
-        /** Constructor for numeric floating point values. */
+        /** Construct from numeric floating point value. */
         SmaModbusValue(double value, const DataType typ = DataType::U32, const DataFormat fmt = DataFormat::RAW) : u64(0), type(typ), format(fmt) {
             const bool isValid = !isNaN(value);
             if (isValid) {
