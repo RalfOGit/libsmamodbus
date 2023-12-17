@@ -29,8 +29,8 @@ std::string SmaModbus::toString(const Category& category) {
 }
 
 std::string SmaModbus::RegisterDefinition::toString(void) const {
-    char buff[512];
-    snprintf(buff, sizeof(buff), "%u %-5s %-4s %-2s %-20s", (unsigned)addr, ::toString(type).c_str(), ::toString(format).c_str(), SmaModbus::toString(mode).c_str(), identifier.c_str());
+    char buff[128];
+    snprintf(buff, sizeof(buff), "%u %-5s %-4s %-2s %-20s", (unsigned)addr, libsmamodbus::toString(type).c_str(), libsmamodbus::toString(format).c_str(), SmaModbus::toString(mode).c_str(), identifier.c_str());
     return std::string(buff);
 }
 
@@ -151,7 +151,12 @@ void SmaModbus::printRegister(const RegisterDefinition& reg, const SmaModbusValu
         if (value.type != reg.type || value.format != reg.format) {
             reg_value = SmaModbusValue(value.toDouble(), reg.type, reg.format).u64; // apply the register type and format to the given value
         }
-        printf("%s:  %08llx %llu\n", reg.toString().c_str(), value.u64, value.u64);
+        if (value.isValid()) {
+            printf("%s:  %08llx %llu\n", reg.toString().c_str(), value.u64, value.u64);
+        }
+        else {
+            printf("%s:  %08llx NaN\n", reg.toString().c_str(), value.u64);
+        }
         break;
     }
     case DataType::STR32:

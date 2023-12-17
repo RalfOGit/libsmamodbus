@@ -150,14 +150,12 @@ namespace libsmamodbus {
         /** Check if the value is valid. Invalid data types and NaN values are considered as invalid. */
         bool isValid(void) const {
             bool result = false;
-            if (type != DataType::INVALID) {
-                switch (type) {
-                case DataType::U32:  result = (u64 != U32_NaN); break;
-                case DataType::S32:  result = (u64 != S32_NaN); break;
-                case DataType::U64:  result = (u64 != S32_NaN); break;
-                case DataType::S64:  result = (u64 != S32_NaN); break;
-                case DataType::ENUM: result = (u64 != Enum_NaN); break;
-                }
+            switch (type) {
+            case DataType::U32:  result = (u64 != U32_NaN); break;
+            case DataType::S32:  result = (u64 != (uint32_t)S32_NaN); break;
+            case DataType::U64:  result = (u64 != U64_NaN); break;
+            case DataType::S64:  result = (u64 != S64_NaN); break;
+            case DataType::ENUM: result = (u64 != Enum_NaN); break;
             }
             return result;
         }
